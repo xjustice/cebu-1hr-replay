@@ -255,18 +255,35 @@
     <script>
         // YouTube IFrame API initialization
         let player;
-        const videoId = 'N_RCl-wR_xM';
+        const videoId = 'N_RCl-wR_xM'; 
         const totalDurationInSeconds = 3600; // 1 hour
         let remainingSeconds = totalDurationInSeconds;
         let timerInterval;
 
-        // Load the IFrame Player API code asynchronously.
-        var tag = document.createElement('script');
-        tag.src = "https://www.youtube.com/iframe_api";
-        var firstScriptTag = document.getElementsByTagName('script')[0];
-        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        const startBtn = document.getElementById('start-button');
+        const startOverlay = document.getElementById('start-overlay');
+        const timerDisplay = document.getElementById('timer');
+        const progressBar = document.getElementById('progress-bar');
+        const muteBtn = document.getElementById('mute-btn');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const uiLayer = document.getElementById('ui-layer');
 
-        function onYouTubeIframeAPIReady() {
+        // UI State: Loading
+        startBtn.textContent = 'CONNECTING TO YOUTUBE...';
+        startBtn.disabled = true;
+        startBtn.style.opacity = '0.5';
+
+        // Timer to detect loading failure
+        const loadTimeout = setTimeout(() => {
+            if (!player) {
+                startBtn.textContent = 'CONNECTION FAILED';
+                alert('유튜브 서버에 연결할 수 없습니다. 광고 차단 프로그램이 활성화되어 있는지 확인해 주세요.');
+            }
+        }, 8000);
+
+        // This function must be globally accessible for the YouTube API
+        window.onYouTubeIframeAPIReady = function() {
+            console.log('YouTube API Ready');
             player = new YT.Player('player', {
                 height: '100%',
                 width: '100%',
@@ -289,33 +306,18 @@
                     'onError': onPlayerError
                 }
             });
-        }
+        };
 
         function onPlayerError(event) {
             console.error('YouTube Player Error:', event.data);
-            if (event.data === 101 || event.data === 150) {
-                alert('This video cannot be played in an embedded player. The owner may have disabled embedding.');
-            } else {
-                alert('An error occurred with the video player. Please try refreshing.');
-            }
+            let msg = '비디오를 재생할 수 없습니다.';
+            if (event.data === 101 || event.data === 150) msg = '이 영상은 외부 사이트 재생이 제한되어 있습니다.';
+            alert(msg);
         }
 
-        const startBtn = document.getElementById('start-button');
-        const startOverlay = document.getElementById('start-overlay');
-        const timerDisplay = document.getElementById('timer');
-        const progressBar = document.getElementById('progress-bar');
-        const muteBtn = document.getElementById('mute-btn');
-        const fullscreenBtn = document.getElementById('fullscreen-btn');
-        const uiLayer = document.getElementById('ui-layer');
-
-        // Disable start button until video is fully loaded
-        startBtn.textContent = 'LOADING VIDEO...';
-        startBtn.disabled = true;
-        startBtn.style.opacity = '0.5';
-        startBtn.style.cursor = 'not-allowed';
-
         function onPlayerReady(event) {
-            // Player is ready, enable start button
+            console.log('Player Ready');
+            clearTimeout(loadTimeout);
             startBtn.textContent = 'START SESSION';
             startBtn.disabled = false;
             startBtn.style.opacity = '1';
@@ -324,30 +326,32 @@
 
         function onPlayerStateChange(event) {
             if (event.data === YT.PlayerState.ENDED) {
-                player.playVideo(); // Loop perfectly
+                player.playVideo(); // Loop
             }
         }
 
+        // Load the IFrame Player API code asynchronously.
+        var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
         startBtn.addEventListener('click', () => {
+            if (!player || typeof player.playVideo !== 'function') return;
+            
             startOverlay.classList.add('fade-out');
             startTimer();
             try {
-                if (player && typeof player.playVideo === 'function') {
-                    player.playVideo();
-                    player.unMute();
-                    muteBtn.textContent = 'MUTE';
-                } else {
-                    console.warn("Player API not fully loaded or blocked.");
-                    alert("비디오 플레이어를 불러오지 못했습니다. 브라우저 확장 프로그램(광고 차단 등)을 확인해 주세요.");
-                }
+                player.playVideo();
+                player.unMute();
+                muteBtn.textContent = 'MUTE';
             } catch (e) {
-                console.error("Player start error:", e);
-                alert("비디오 재생 오류가 발생했습니다. 새로고침 해주세요.");
+                console.error("Play error:", e);
             }
         });
 
         function startTimer() {
+            if (timerInterval) return;
             timerInterval = setInterval(() => {
                 remainingSeconds--;
                 updateDisplay();
@@ -355,7 +359,7 @@
                 if (remainingSeconds <= 0) {
                     clearInterval(timerInterval);
                     player.stopVideo();
-                    alert('Session Completed');
+                    alert('1시간 세션이 종료되었습니다.');
                 }
             }, 1000);
         }
@@ -370,6 +374,7 @@
         }
 
         muteBtn.addEventListener('click', () => {
+            if (!player) return;
             if (player.isMuted()) {
                 player.unMute();
                 muteBtn.textContent = 'MUTE';
@@ -389,7 +394,6 @@
             }
         });
 
-        // UI hiding logic
         let uiTimeout;
         function showUI() {
             uiLayer.classList.remove('hidden');
