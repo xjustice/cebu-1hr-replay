@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cebu 1-Hour Replay | Premium Cinematic Experience</title>
+    <meta name="description" content="Experience the beat of Cebu with a 1-hour continuous cinematic playback. Perfect for focus, relaxation, or virtual travel.">
+    <meta property="og:title" content="Cebu 1-Hour Replay">
+    <meta property="og:description" content="1-hour continuous cinematic playback of Cebu's beauty.">
+    <meta property="og:type" content="website">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #050505;
+            --accent-color: #00ecff;
+            --text-color: #ffffff;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #video-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        #video-container iframe {
+            width: 100vw;
+            height: 56.25vw; /* 16:9 aspect ratio */
+            min-height: 100vh;
+            min-width: 177.77vh;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Overlay for UI */
+        .ui-layer {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.7) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 2.5rem;
+            opacity: 1;
+            transition: var(--transition);
+        }
+
+        .ui-layer.hidden {
+            opacity: 0;
+            cursor: none;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .title-box h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.05em;
+            text-transform: uppercase;
+            background: linear-gradient(90deg, #fff, var(--accent-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .title-box p {
+            font-size: 0.9rem;
+            opacity: 0.6;
+            font-weight: 300;
+        }
+
+        .timer-box {
+            text-align: right;
+        }
+
+        #timer {
+            font-size: 3rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            color: var(--accent-color);
+            text-shadow: 0 0 20px rgba(0, 236, 255, 0.3);
+        }
+
+        footer {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .progress-container {
+            flex-grow: 1;
+            height: 4px;
+            background: var(--glass-bg);
+            border-radius: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #progress-bar {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 0%;
+            background: var(--accent-color);
+            box-shadow: 0 0 10px var(--accent-color);
+            transition: width 0.5s linear;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        button {
+            background: var(--glass-bg);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        button:hover {
+            background: rgba(255,255,255,0.15);
+            border-color: var(--accent-color);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 236, 255, 0.1);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        /* Initial Start Overlay */
+        #start-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 100;
+            background: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 2rem;
+            transition: var(--transition);
+        }
+
+        #start-overlay.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #start-button {
+            padding: 1.5rem 3rem;
+            font-size: 1.2rem;
+            background: var(--accent-color);
+            color: var(--bg-color);
+            border: none;
+            font-weight: 700;
+        }
+
+        #start-button:hover {
+            box-shadow: 0 0 30px var(--accent-color);
+        }
+
+        /* Mobile specific adjustments */
+        @media (max-width: 768px) {
+            .ui-layer { padding: 1.5rem; }
+            #timer { font-size: 2rem; }
+            .title-box h1 { font-size: 1.5rem; }
+            footer { flex-direction: column; gap: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="start-overlay">
+        <h1 style="color: #fff; font-size: 2.5rem; text-align: center; margin-bottom: 0.5rem;">Cebu Replay</h1>
+        <p style="opacity: 0.6; margin-bottom: 2rem;">1 Hour Continuous Cinematic Playback</p>
+        <button id="start-button">START SESSION</button>
+    </div>
+
+    <div id="video-container">
+        <!-- YouTube Player will be inserted here -->
+        <div id="player"></div>
+    </div>
+
+    <div class="ui-layer" id="ui-layer">
+        <header>
+            <div class="title-box">
+                <h1>The NU Beat of Cebu</h1>
+                <p>1-Hour Auto-Looping Experience</p>
+            </div>
+            <div class="timer-box">
+                <div id="timer">60:00</div>
+                <p style="font-size: 0.7rem; opacity: 0.5; text-transform: uppercase; letter-spacing: 2px;">Remaining</p>
+            </div>
+        </header>
+
+        <footer>
+            <div class="progress-container">
+                <div id="progress-bar"></div>
+            </div>
+            <div class="controls">
+                <button id="mute-btn">UNMUTE</button>
+                <button id="fullscreen-btn">FULLSCREEN</button>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // YouTube IFrame API initialization
+        let player;
+        const videoId = 'Cl078T7Oq2M';
+        const totalDurationInSeconds = 3600; // 1 hour
+        let remainingSeconds = totalDurationInSeconds;
+        let timerInterval;
+
+        // Load the IFrame Player API code asynchronously.
+        var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                videoId: videoId,
+                playerVars: {
+                    'autoplay': 1,
+                    'controls': 0,
+                    'rel': 0,
+                    'showinfo': 0,
+                    'modestbranding': 1,
+                    'loop': 1,
+                    'playlist': videoId,
+                    'mute': 1,
+                    'playsinline': 1
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            // Player is ready, but we wait for user to click START
+        }
+
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.ENDED) {
+                player.playVideo(); // Loop perfectly
+            }
+        }
+
+        const startBtn = document.getElementById('start-button');
+        const startOverlay = document.getElementById('start-overlay');
+        const timerDisplay = document.getElementById('timer');
+        const progressBar = document.getElementById('progress-bar');
+        const muteBtn = document.getElementById('mute-btn');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const uiLayer = document.getElementById('ui-layer');
+
+        startBtn.addEventListener('click', () => {
+            startOverlay.classList.add('fade-out');
+            player.playVideo();
+            player.unMute();
+            muteBtn.textContent = 'MUTE';
+            startTimer();
+        });
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                remainingSeconds--;
+                updateDisplay();
+
+                if (remainingSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    player.stopVideo();
+                    alert('Session Completed');
+                }
+            }, 1000);
+        }
+
+        function updateDisplay() {
+            const mins = Math.floor(remainingSeconds / 60);
+            const secs = remainingSeconds % 60;
+            timerDisplay.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            
+            const progress = ((totalDurationInSeconds - remainingSeconds) / totalDurationInSeconds) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        muteBtn.addEventListener('click', () => {
+            if (player.isMuted()) {
+                player.unMute();
+                muteBtn.textContent = 'MUTE';
+            } else {
+                player.mute();
+                muteBtn.textContent = 'UNMUTE';
+            }
+        });
+
+        fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+                fullscreenBtn.textContent = 'EXIT FULLSCREEN';
+            } else {
+                document.exitFullscreen();
+                fullscreenBtn.textContent = 'FULLSCREEN';
+            }
+        });
+
+        // UI hiding logic
+        let uiTimeout;
+        function showUI() {
+            uiLayer.classList.remove('hidden');
+            clearTimeout(uiTimeout);
+            uiTimeout = setTimeout(() => {
+                if (remainingSeconds < totalDurationInSeconds) {
+                    uiLayer.classList.add('hidden');
+                }
+            }, 3000);
+        }
+
+        document.addEventListener('mousemove', showUI);
+        document.addEventListener('touchstart', showUI);
+    </script>
+</body>
+</html>
